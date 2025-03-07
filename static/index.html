@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Fullstack App with Vecty</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/wasm_exec.js"></script>
+    <script>
+        console.log("Starting WebAssembly loader...");
+        
+        // WebAssembly loader
+        (async () => {
+            if (!WebAssembly.instantiateStreaming) {
+                console.log("WebAssembly.instantiateStreaming not available, using polyfill");
+                WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                    const source = await (await resp).arrayBuffer();
+                    return await WebAssembly.instantiate(source, importObject);
+                };
+            }
+            
+            const go = new Go();
+            console.log("Fetching WebAssembly module...");
+            
+            try {
+                console.log("Loading /static/main.wasm");
+                const response = await fetch("/static/main.wasm");
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                console.log("Instantiating WebAssembly module...");
+                const result = await WebAssembly.instantiateStreaming(response, go.importObject);
+                
+                console.log("Running WebAssembly module...");
+                go.run(result.instance);
+            } catch (err) {
+                console.error("Failed to load WebAssembly:", err);
+                document.getElementById("app").innerHTML = `Error loading WebAssembly: ${err.message}`;
+            }
+        })();
+    </script>
+</head>
+<body>
+    <!-- The Vecty application will render here -->
+    <div id="app">Loading Go WebAssembly application...</div>
+    
+    <!-- Fallback content in case WebAssembly fails to load -->
+    <div id="fallback" style="display:none;">
+        <h1>Go Fullstack App</h1>
+        <p>If you're seeing this, the WebAssembly application failed to load.</p>
+        <p>Check the browser console for errors.</p>
+    </div>
+    
+    <script>
+        // Show fallback content after 5 seconds if the app hasn't loaded
+        setTimeout(() => {
+            if (document.getElementById("app").innerText.includes("Loading")) {
+                document.getElementById("fallback").style.display = "block";
+            }
+        }, 5000);
+    </script>
+</body>
+</html> 
