@@ -10,7 +10,6 @@ go.work
 
 # Binaries for programs and plugins
 /bin/
-/pkg/
 
 # Server binary
 /server
